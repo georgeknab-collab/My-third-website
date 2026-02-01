@@ -1,47 +1,687 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>My Website with Comments</title>
-  <style>
-    body {
-      background-color: #1e1e1e;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 50px;
-    }
-    h1 {
-      color: #ffcc00;
-    }
-    .content {
-      margin-bottom: 50px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TERMINAL v2.4.1 - SECURE CONNECTION</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --green: #00ff00;
+            --dark-green: #003300;
+            --bg: #000000;
+            --red: #ff0000;
+            --yellow: #ffff00;
+            --blue: #0099ff;
+        }
+
+        body {
+            font-family: 'Courier Prime', 'Courier New', monospace;
+            background: var(--bg);
+            color: var(--green);
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                transparent 50%,
+                rgba(0, 255, 0, 0.02) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 1000;
+            animation: scanline 8s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100%; }
+        }
+
+        .crt-flicker {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 255, 0, 0.01);
+            pointer-events: none;
+            z-index: 999;
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.97; }
+            50% { opacity: 1; }
+            100% { opacity: 0.97; }
+        }
+
+        .terminal-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(0, 20, 0, 0.8);
+            border: 2px solid var(--green);
+            box-shadow: 
+                0 0 20px rgba(0, 255, 0, 0.3),
+                inset 0 0 40px rgba(0, 255, 0, 0.05);
+            position: relative;
+        }
+
+        .terminal-header {
+            background: var(--dark-green);
+            padding: 8px 15px;
+            border-bottom: 2px solid var(--green);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .terminal-title {
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .terminal-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid var(--green);
+        }
+
+        .btn.close { background: var(--red); }
+        .btn.min { background: var(--yellow); }
+        .btn.max { background: var(--green); }
+
+        .terminal-body {
+            padding: 20px;
+            min-height: 600px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .output-line {
+            margin: 2px 0;
+            opacity: 0;
+            animation: fadeIn 0.1s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .prompt {
+            color: var(--green);
+            display: inline-block;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: var(--green);
+            animation: blink 1s step-end infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        .input-line {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        #commandInput {
+            background: transparent;
+            border: none;
+            color: var(--green);
+            font-family: 'Courier Prime', monospace;
+            font-size: 14px;
+            outline: none;
+            flex: 1;
+            caret-color: var(--green);
+        }
+
+        .success { color: var(--green); }
+        .error { color: var(--red); }
+        .warning { color: var(--yellow); }
+        .info { color: var(--blue); }
+
+        .ascii-art {
+            color: var(--green);
+            line-height: 1.2;
+            font-size: 10px;
+            opacity: 0.7;
+        }
+
+        .progress-bar {
+            display: inline-block;
+            width: 300px;
+            height: 20px;
+            border: 1px solid var(--green);
+            position: relative;
+            margin: 5px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--green);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .glitch {
+            animation: glitch 0.3s infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        .typing {
+            overflow: hidden;
+            border-right: 2px solid var(--green);
+            white-space: nowrap;
+            animation: typing 2s steps(40) 1s forwards, blink-border 0.75s step-end infinite;
+            max-width: 0;
+        }
+
+        @keyframes typing {
+            from { max-width: 0; }
+            to { max-width: 100%; }
+        }
+
+        @keyframes blink-border {
+            50% { border-color: transparent; }
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.1;
+        }
+
+        .file-tree {
+            margin-left: 20px;
+        }
+
+        .file-item {
+            margin: 2px 0;
+            cursor: pointer;
+        }
+
+        .file-item:hover {
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .access-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .access-item {
+            padding: 8px;
+            border: 1px solid var(--green);
+            text-align: center;
+            font-size: 11px;
+            transition: all 0.3s;
+        }
+
+        .access-item.unlocked {
+            background: rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s steps(4) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+            80%, 100% { content: ''; }
+        }
+
+        .hack-complete {
+            animation: pulse 0.5s ease-in-out 3;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
 </head>
 <body>
-  <h1>Welcome to My Website 🌍</h1>
-  <div class="content">
-    <p>This is my new website! Feel free to leave a comment below.</p>
-  </div>
+    <div class="matrix-bg" id="matrixBg"></div>
+    <div class="scanlines"></div>
+    <div class="crt-flicker"></div>
 
-  <h2>Comments 💬</h2>
-  
-  <!-- Giscus comment system -->
-  <script src="https://giscus.app/client.js"
-    data-repo="georgeknab-collab/My-2nd-website"
-    data-repo-id=""
-    data-category="General"
-    data-category-id=""
-    data-mapping="pathname"
-    data-reactions-enabled="1"
-    data-emit-metadata="0"
-    data-input-position="bottom"
-    data-theme="dark"
-    data-lang="en"
-    crossorigin="anonymous"
-    async>
-  </script>
+    <div class="terminal-container">
+        <div class="terminal-header">
+            <div class="terminal-title">root@cybersec-terminal ~ /home/hacker</div>
+            <div class="terminal-buttons">
+                <div class="btn close"></div>
+                <div class="btn min"></div>
+                <div class="btn max"></div>
+            </div>
+        </div>
+        <div class="terminal-body" id="terminalBody">
+            <div class="output-line">
+                <pre class="ascii-art">
+ ██████╗██╗   ██╗██████╗ ███████╗██████╗     ██╗  ██╗ █████╗  ██████╗██╗  ██╗
+██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗    ██║  ██║██╔══██╗██╔════╝██║ ██╔╝
+██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝    ███████║███████║██║     █████╔╝ 
+██║       ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗    ██╔══██║██╔══██║██║     ██╔═██╗ 
+╚██████╗   ██║   ██████╔╝███████╗██║  ██║    ██║  ██║██║  ██║╚██████╗██║  ██╗
+ ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝    ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
+                </pre>
+            </div>
+            <div class="output-line">═══════════════════════════════════════════════════════════════════════</div>
+            <div class="output-line">SYSTEM VERSION: 2.4.1-BLACKHAT | BUILD: 20260131</div>
+            <div class="output-line">KERNEL: Linux cybersec 6.2.0-hacknet #1 SMP</div>
+            <div class="output-line">CONNECTION: ENCRYPTED TOR RELAY | ANONYMITY: MAXIMUM</div>
+            <div class="output-line">═══════════════════════════════════════════════════════════════════════</div>
+            <div class="output-line">&nbsp;</div>
+            <div class="output-line success">[✓] Neural link established...</div>
+            <div class="output-line success">[✓] Proxy chains initialized...</div>
+            <div class="output-line success">[✓] Encryption protocols active...</div>
+            <div class="output-line warning">[!] WARNING: Unauthorized access detected on this terminal may result in trace</div>
+            <div class="output-line">&nbsp;</div>
+            <div class="output-line info">Type '<span class="warning">help</span>' for available commands</div>
+            <div class="output-line info">Type '<span class="warning">hack</span>' to begin penetration sequence</div>
+            <div class="output-line">&nbsp;</div>
+            
+            <div class="input-line">
+                <span class="prompt">root@cybersec:~$ </span>
+                <input type="text" id="commandInput" autofocus autocomplete="off">
+                <span class="cursor"></span>
+            </div>
+        </div>
+    </div>
 
+    <script>
+        const terminal = document.getElementById('terminalBody');
+        const input = document.getElementById('commandInput');
+        let commandHistory = [];
+        let historyIndex = -1;
+        let isProcessing = false;
+        let accessLevel = 0;
+
+        const passwords = {
+            'admin': { level: 5, system: 'MAINFRAME', file: 'admin_access.key' },
+            'root': { level: 5, system: 'ROOT SHELL', file: 'root.passwd' },
+            'shadow': { level: 4, system: 'SHADOW DATABASE', file: 'shadow.db' },
+            'exploit': { level: 3, system: 'EXPLOIT KIT', file: 'exploit.bin' },
+            'backdoor': { level: 4, system: 'BACKDOOR ACCESS', file: 'backdoor.sh' },
+            'keylog': { level: 2, system: 'KEYLOGGER', file: 'keylog.exe' },
+            'trojan': { level: 3, system: 'TROJAN PAYLOAD', file: 'trojan.dll' },
+            'proxy': { level: 1, system: 'PROXY SERVER', file: 'proxy.conf' },
+            'firewall': { level: 3, system: 'FIREWALL BYPASS', file: 'firewall.rules' },
+            'crypto': { level: 4, system: 'CRYPTO VAULT', file: 'crypto.wallet' },
+            'darkweb': { level: 4, system: 'DARK WEB ACCESS', file: 'onion.route' },
+            'matrix': { level: 5, system: 'MATRIX CORE', file: 'matrix.core' }
+        };
+
+        const commands = {
+            help: () => {
+                return `
+<span class="info">AVAILABLE COMMANDS:</span>
+═══════════════════════════════════════════════════════════════════════
+  <span class="warning">help</span>        - Display this help menu
+  <span class="warning">hack</span>        - Initiate penetration testing sequence
+  <span class="warning">crack</span>       - Attempt password crack [usage: crack <password>]
+  <span class="warning">scan</span>        - Network vulnerability scan
+  <span class="warning">exploit</span>     - Deploy exploit framework
+  <span class="warning">status</span>      - Show system status and access level
+  <span class="warning">whoami</span>      - Display current user info
+  <span class="warning">ls</span>          - List directory contents
+  <span class="warning">clear</span>       - Clear terminal screen
+  <span class="warning">exit</span>        - Terminate session
+═══════════════════════════════════════════════════════════════════════`;
+            },
+
+            whoami: () => {
+                return `<span class="success">root</span>
+User ID: 0 (root)
+Groups: root, sudo, hackers, darknet
+Clearance: <span class="warning">LEVEL ${accessLevel}/5</span>
+Status: <span class="${accessLevel >= 5 ? 'success' : 'error'}">
+${accessLevel >= 5 ? 'FULL ACCESS GRANTED' : 'RESTRICTED ACCESS'}</span>`;
+            },
+
+            status: () => {
+                const bars = '█'.repeat(accessLevel * 4) + '░'.repeat((5 - accessLevel) * 4);
+                return `
+<span class="info">═══ SYSTEM STATUS ═══</span>
+Access Level: [${bars}] ${accessLevel}/5
+Firewalls Bypassed: ${Math.min(accessLevel * 2, 10)}/10
+Exploits Active: ${accessLevel * 3}
+Encrypted Channels: ${accessLevel >= 3 ? 'ACTIVE' : 'INACTIVE'}
+Root Access: ${accessLevel >= 5 ? '<span class="success">GRANTED</span>' : '<span class="error">DENIED</span>'}`;
+            },
+
+            ls: () => {
+                return `<span class="info">total 48</span>
+drwxr-xr-x  2 root root  4096 Jan 31 ${new Date().getHours()}:${new Date().getMinutes()} <span class="warning">.</span>
+drwxr-xr-x 18 root root  4096 Jan 30 14:22 <span class="warning">..</span>
+-rwx------  1 root root  2048 Jan 31 ${new Date().getHours()}:${new Date().getMinutes()} <span class="success">exploit.bin</span>
+-rw-r--r--  1 root root  1337 Jan 29 03:14 passwords.enc
+-rwxr-xr-x  1 root root  8192 Jan 28 23:59 <span class="success">hack_tool.sh</span>
+-rw-------  1 root root   420 Jan 31 ${new Date().getHours()}:${new Date().getMinutes()} shadow.db
+drwx------  2 root root  4096 Jan 27 11:11 <span class="info">.ssh</span>
+-rw-r--r--  1 root root  3141 Jan 26 16:20 network.log`;
+            },
+
+            clear: () => {
+                terminal.innerHTML = '';
+                return null;
+            },
+
+            exit: () => {
+                return `<span class="error">CONNECTION TERMINATED</span>
+<span class="warning">Clearing traces...</span>
+<span class="success">Session closed.</span>`;
+            },
+
+            scan: async () => {
+                const output = [`<span class="warning">[*] Initiating network scan...</span>`];
+                
+                await addLineWithDelay(output[0], 0);
+                await sleep(500);
+                await addLineWithDelay(`<span class="info">[*] Scanning IP range: 192.168.1.0/24</span>`, 300);
+                
+                const ips = ['192.168.1.1', '192.168.1.47', '192.168.1.103', '192.168.1.254'];
+                for (let ip of ips) {
+                    await sleep(400);
+                    await addLineWithDelay(`<span class="success">[+] Host ${ip} - VULNERABLE (ports: 22, 80, 443)</span>`, 100);
+                }
+                
+                await sleep(300);
+                await addLineWithDelay(`<span class="success">[✓] Scan complete. 4 vulnerable hosts found.</span>`, 200);
+                return null;
+            },
+
+            exploit: async () => {
+                const output = [`<span class="warning">[*] Loading exploit framework...</span>`];
+                
+                await addLineWithDelay(output[0], 0);
+                await sleep(300);
+                
+                const exploits = [
+                    'CVE-2024-9999 - Buffer Overflow',
+                    'CVE-2024-8888 - SQL Injection',
+                    'CVE-2024-7777 - Remote Code Execution',
+                    'CVE-2024-6666 - Privilege Escalation'
+                ];
+                
+                for (let exp of exploits) {
+                    await sleep(400);
+                    await addLineWithDelay(`<span class="info">[+] ${exp}</span>`, 100);
+                }
+                
+                await sleep(500);
+                await addLineWithDelay(`<span class="success">[✓] Framework ready. ${exploits.length} exploits loaded.</span>`, 200);
+                return null;
+            }
+        };
+
+        async function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function addLineWithDelay(text, delay = 0) {
+            await sleep(delay);
+            addOutput(text);
+        }
+
+        function addOutput(text) {
+            const line = document.createElement('div');
+            line.className = 'output-line';
+            line.innerHTML = text;
+            
+            const inputLine = terminal.querySelector('.input-line');
+            terminal.insertBefore(line, inputLine);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        async function hackSequence() {
+            isProcessing = true;
+            const messages = [
+                { text: '<span class="warning">[*] Initiating penetration test...</span>', delay: 0 },
+                { text: '<span class="info">[*] Establishing connection to target...</span>', delay: 500 },
+                { text: '<span class="success">[+] Connection established</span>', delay: 800 },
+                { text: '<span class="warning">[*] Probing for vulnerabilities...</span>', delay: 700 },
+                { text: '<span class="info">[*] Analyzing security protocols...</span>', delay: 900 },
+                { text: '<span class="success">[+] Vulnerability found: Weak authentication</span>', delay: 600 },
+                { text: '<span class="warning">[*] Deploying brute force module...</span>', delay: 500 }
+            ];
+
+            for (let msg of messages) {
+                await addLineWithDelay(msg.text, msg.delay);
+            }
+
+            await sleep(500);
+            addOutput('<span class="info">[*] Attempting password crack...</span>');
+            await sleep(300);
+
+            // Progress bar
+            const progressLine = document.createElement('div');
+            progressLine.className = 'output-line';
+            progressLine.innerHTML = '<div class="progress-bar"><div class="progress-fill" id="hackProgress"></div></div>';
+            const inputLine = terminal.querySelector('.input-line');
+            terminal.insertBefore(progressLine, inputLine);
+
+            const progressBar = document.getElementById('hackProgress');
+            for (let i = 0; i <= 100; i += 2) {
+                await sleep(50);
+                progressBar.style.width = i + '%';
+            }
+
+            await sleep(500);
+            addOutput(`<span class="success hack-complete">[✓] BREACH SUCCESSFUL!</span>`);
+            await sleep(300);
+            addOutput(`<span class="warning">[!] Multiple access codes discovered. Use 'crack <password>' to authenticate.</span>`);
+            await sleep(200);
+            addOutput(`<span class="info">[*] Hint: Try passwords like 'admin', 'shadow', 'exploit', 'matrix'...</span>`);
+            
+            isProcessing = false;
+        }
+
+        async function crackPassword(password) {
+            if (!passwords[password]) {
+                addOutput(`<span class="error">[✗] Password '${password}' not found in database</span>`);
+                return;
+            }
+
+            isProcessing = true;
+            const data = passwords[password];
+
+            await addLineWithDelay(`<span class="warning">[*] Attempting crack on: ${password}</span>`, 0);
+            await addLineWithDelay(`<span class="info">[*] Loading rainbow tables...</span>`, 300);
+            await addLineWithDelay(`<span class="info">[*] Decrypting hash...</span>`, 400);
+            
+            // Mini progress
+            const progressLine = document.createElement('div');
+            progressLine.className = 'output-line';
+            progressLine.innerHTML = '<span class="info">[*] Progress: </span><div class="progress-bar" style="width: 200px; display: inline-block;"><div class="progress-fill" id="crackProgress"></div></div>';
+            const inputLine = terminal.querySelector('.input-line');
+            terminal.insertBefore(progressLine, inputLine);
+
+            const progressBar = document.getElementById('crackProgress');
+            for (let i = 0; i <= 100; i += 5) {
+                await sleep(40);
+                progressBar.style.width = i + '%';
+            }
+
+            await sleep(300);
+            
+            if (password === 'admin' || password === 'matrix' || password === 'root') {
+                addOutput(`<span class="success glitch">[✓✓✓] CRITICAL ACCESS GRANTED! ✓✓✓</span>`);
+                addOutput(`<span class="success">╔═══════════════════════════════════════╗</span>`);
+                addOutput(`<span class="success">║   ADMIN MODE ACTIVATED - FULL ACCESS  ║</span>`);
+                addOutput(`<span class="success">╚═══════════════════════════════════════╝</span>`);
+                triggerAdminMode();
+            } else {
+                addOutput(`<span class="success">[✓] PASSWORD CRACKED!</span>`);
+            }
+
+            accessLevel = Math.max(accessLevel, data.level);
+            
+            await sleep(200);
+            addOutput(`<span class="info">System: ${data.system}</span>`);
+            addOutput(`<span class="info">File: ${data.file}</span>`);
+            addOutput(`<span class="success">Access Level: ${accessLevel}/5</span>`);
+            
+            if (accessLevel >= 5) {
+                await sleep(300);
+                addOutput(`<span class="warning glitch">═══ ROOT ACCESS ACHIEVED ═══</span>`);
+                addOutput(`<span class="success">You now have complete control of the system.</span>`);
+            }
+
+            isProcessing = false;
+        }
+
+        function triggerAdminMode() {
+            document.documentElement.style.setProperty('--green', '#ff0000');
+            document.body.style.animation = 'glitch 0.2s infinite';
+            
+            setTimeout(() => {
+                document.documentElement.style.setProperty('--green', '#00ff00');
+                document.body.style.animation = '';
+            }, 2000);
+
+            // Matrix rain effect
+            createMatrixRain();
+        }
+
+        function createMatrixRain() {
+            const chars = '01アイウエオカキクケコサシスセソタチツテト';
+            const matrixBg = document.getElementById('matrixBg');
+            
+            for (let i = 0; i < 30; i++) {
+                const column = document.createElement('div');
+                column.style.cssText = `
+                    position: absolute;
+                    top: -100px;
+                    left: ${Math.random() * 100}%;
+                    color: #00ff00;
+                    opacity: 0.3;
+                    font-size: 14px;
+                    animation: fall ${Math.random() * 3 + 2}s linear infinite;
+                    animation-delay: ${Math.random() * 2}s;
+                `;
+                
+                let text = '';
+                for (let j = 0; j < 20; j++) {
+                    text += chars[Math.floor(Math.random() * chars.length)] + '<br>';
+                }
+                column.innerHTML = text;
+                matrixBg.appendChild(column);
+            }
+
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fall {
+                    to { transform: translateY(100vh); }
+                }
+            `;
+            document.head.appendChild(style);
+
+            setTimeout(() => {
+                matrixBg.innerHTML = '';
+            }, 5000);
+        }
+
+        input.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter' && !isProcessing) {
+                const command = input.value.trim().toLowerCase();
+                
+                if (command) {
+                    addOutput(`<span class="prompt">root@cybersec:~$ </span>${input.value}`);
+                    commandHistory.push(command);
+                    historyIndex = commandHistory.length;
+                    
+                    const parts = command.split(' ');
+                    const cmd = parts[0];
+                    const args = parts.slice(1);
+
+                    if (cmd === 'hack') {
+                        input.value = '';
+                        await hackSequence();
+                    } else if (cmd === 'crack' && args.length > 0) {
+                        input.value = '';
+                        await crackPassword(args[0]);
+                    } else if (commands[cmd]) {
+                        const result = await commands[cmd]();
+                        if (result !== null) {
+                            addOutput(result);
+                        }
+                    } else {
+                        addOutput(`<span class="error">bash: ${cmd}: command not found</span>`);
+                    }
+                }
+                
+                input.value = '';
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    input.value = commandHistory[historyIndex];
+                }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                    input.value = commandHistory[historyIndex];
+                } else {
+                    historyIndex = commandHistory.length;
+                    input.value = '';
+                }
+            }
+        });
+
+        // Auto-focus input
+        document.addEventListener('click', () => input.focus());
+        
+        // Typing sound effect simulation
+        input.addEventListener('keypress', () => {
+            // Could add actual sound here
+        });
+    </script>
 </body>
 </html>
